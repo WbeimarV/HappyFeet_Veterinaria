@@ -11,6 +11,6 @@ package com.happyfeet.happyfeet_veterinaria;
 public class HappyFeet_Veterinaria {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+         Conexion.getConexion();
     }
 }
