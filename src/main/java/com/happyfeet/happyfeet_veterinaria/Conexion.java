@@ -13,8 +13,8 @@ import java.sql.SQLException;
  * @author camper
  */
 public class Conexion {
-    private static final String URL = "jdbc:mysql://localhost:3306/Veterinaria";
-    private static final String USER = "campus2023";     // tu usuario
+    private static final String URL = "jdbc:mysql://localhost:3306/veterinaria";
+    private static final String USER = "root";     // tu usuario
     private static final String PASSWORD = "campus2023"; // tu contraseña
 
     public static Connection getConexion() {
