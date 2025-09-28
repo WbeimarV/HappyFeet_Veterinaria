@@ -1,30 +1,49 @@
 package com.happyfeet.dao;
 
 import com.happyfeet.modelo.Factura;
-import com.happyfeet.happyfeet_veterinaria.Conexion;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class FacturaDAO {
 
-    public void insertar(Factura f) throws SQLException {
+    private final Connection conexion;
+    private static final Logger logger = Logger.getLogger(FacturaDAO.class.getName());
+
+    public FacturaDAO(Connection conexion) {
+        this.conexion = conexion;
+    }
+
+    // INSERTAR
+    public String insertar(Factura f) {
         String sql = "INSERT INTO factura (dueno_id, total) VALUES (?, ?)";
-        try (Connection con = Conexion.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, f.getDuenoId());
             ps.setDouble(2, f.getTotal());
             ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    f.setId(rs.getInt(1));
+                }
+            }
+            return "Factura insertada con éxito. ID: " + f.getId();
+
+        } catch (SQLIntegrityConstraintViolationException e) {
+            return "No se pudo insertar: el dueño con ID " + f.getDuenoId() + " no existe.";
+        } catch (SQLException e) {
+            logger.warning("Error al insertar factura: " + e.getMessage());
+            return "Error al insertar factura: " + e.getMessage();
         }
     }
 
-    public List<Factura> listar() throws SQLException {
+    // LISTAR TODOS
+    public List<Factura> listarTodos() {
         List<Factura> lista = new ArrayList<>();
         String sql = "SELECT * FROM factura";
-        try (Connection con = Conexion.getConexion();
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Factura f = new Factura();
                 f.setId(rs.getInt("id"));
@@ -36,14 +55,16 @@ public class FacturaDAO {
                 if (ts != null) f.setCreatedAt(ts.toLocalDateTime());
                 lista.add(f);
             }
+        } catch (SQLException e) {
+            logger.warning("Error al listar facturas: " + e.getMessage());
         }
         return lista;
     }
 
-    public Factura buscarPorId(int id) throws SQLException {
+    // BUSCAR POR ID
+    public Factura buscarPorId(int id) {
         String sql = "SELECT * FROM factura WHERE id = ?";
-        try (Connection con = Conexion.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -58,7 +79,48 @@ public class FacturaDAO {
                     return f;
                 }
             }
+        } catch (SQLException e) {
+            logger.warning("Error al buscar factura: " + e.getMessage());
         }
         return null;
+    }
+
+    // ACTUALIZAR
+    public String actualizar(Factura f) {
+        String sql = "UPDATE factura SET dueno_id = ?, total = ? WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, f.getDuenoId());
+            ps.setDouble(2, f.getTotal());
+            ps.setInt(3, f.getId());
+
+            int filas = ps.executeUpdate();
+            return filas > 0
+                    ? "Factura actualizada correctamente."
+                    : "No se encontró factura con ID " + f.getId();
+
+        } catch (SQLIntegrityConstraintViolationException e) {
+            return "No se pudo actualizar: el dueño con ID " + f.getDuenoId() + " no existe.";
+        } catch (SQLException e) {
+            logger.warning("Error al actualizar factura: " + e.getMessage());
+            return "Error al actualizar factura: " + e.getMessage();
+        }
+    }
+
+    // ➤ ELIMINAR
+    public String eliminar(int id) {
+        String sql = "DELETE FROM factura WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            int filas = ps.executeUpdate();
+            return filas > 0
+                    ? "Factura eliminada correctamente."
+                    : "No se encontró factura con ID " + id;
+
+        } catch (SQLIntegrityConstraintViolationException e) {
+            return "No se puede eliminar: esta factura tiene ítems asociados.";
+        } catch (SQLException e) {
+            logger.warning("Error al eliminar factura: " + e.getMessage());
+            return "Error al eliminar factura: " + e.getMessage();
+        }
     }
 }

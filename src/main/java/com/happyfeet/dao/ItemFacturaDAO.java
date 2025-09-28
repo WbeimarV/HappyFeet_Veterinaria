@@ -1,36 +1,60 @@
 package com.happyfeet.dao;
 
 import com.happyfeet.modelo.ItemFactura;
-import com.happyfeet.happyfeet_veterinaria.Conexion;
+
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class ItemFacturaDAO {
 
-    public void insertar(ItemFactura i) throws SQLException {
+    private final Connection conexion;
+    private static final Logger logger = Logger.getLogger(ItemFacturaDAO.class.getName());
+
+    public ItemFacturaDAO(Connection conexion) {
+        this.conexion = conexion;
+    }
+
+    // INSERTAR
+    public String insertar(ItemFactura i) {
         String sql = "INSERT INTO item_factura (factura_id, producto_id, servicio_descripcion, " +
                      "cantidad, precio_unitario, subtotal) VALUES (?,?,?,?,?,?)";
-        try (Connection con = Conexion.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
             ps.setInt(1, i.getFacturaId());
-            if (i.getProductoId() != null) ps.setInt(2, i.getProductoId());
-            else ps.setNull(2, Types.INTEGER);
+
+            if (i.getProductoId() != null) {
+                ps.setInt(2, i.getProductoId());
+            } else {
+                ps.setNull(2, Types.INTEGER);
+            }
+
             ps.setString(3, i.getServicioDescripcion());
             ps.setInt(4, i.getCantidad());
             ps.setDouble(5, i.getPrecioUnitario());
             ps.setDouble(6, i.getSubtotal());
+
             ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) i.setId(rs.getInt(1));
+            }
+
+            return "ItemFactura insertado con éxito. ID: " + i.getId();
+
+        } catch (SQLException e) {
+            logger.warning("Error al insertar ItemFactura: " + e.getMessage());
+            return "Error al insertar ItemFactura: " + e.getMessage();
         }
     }
 
-    public List<ItemFactura> listar() throws SQLException {
+    // LISTAR TODOS
+    public List<ItemFactura> listar() {
         List<ItemFactura> lista = new ArrayList<>();
         String sql = "SELECT * FROM item_factura";
-        try (Connection con = Conexion.getConexion();
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 ItemFactura i = new ItemFactura();
@@ -46,14 +70,16 @@ public class ItemFacturaDAO {
                 if (ts != null) i.setCreatedAt(ts.toLocalDateTime());
                 lista.add(i);
             }
+        } catch (SQLException e) {
+            logger.warning("Error al listar ItemFactura: " + e.getMessage());
         }
         return lista;
     }
 
-    public ItemFactura buscarPorId(int id) throws SQLException {
+    // BUSCAR POR ID
+    public ItemFactura buscarPorId(int id) {
         String sql = "SELECT * FROM item_factura WHERE id = ?";
-        try (Connection con = Conexion.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -71,6 +97,8 @@ public class ItemFacturaDAO {
                     return i;
                 }
             }
+        } catch (SQLException e) {
+            logger.warning("Error al buscar ItemFactura con ID " + id + ": " + e.getMessage());
         }
         return null;
     }

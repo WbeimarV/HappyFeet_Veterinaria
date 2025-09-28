@@ -21,6 +21,7 @@ public class EventoTipo {
     public String getNombre() { return nombre; }
     public Timestamp getCreatedAt() { return createdAt; }
 
+    public void setId(int id) { this.id = id; }   // NUEVO
     public void setNombre(String nombre) { this.nombre = nombre; }
 
     @Override
@@ -28,3 +29,4 @@ public class EventoTipo {
         return "EventoTipo{id=" + id + ", nombre='" + nombre + "'}";
     }
 }
+

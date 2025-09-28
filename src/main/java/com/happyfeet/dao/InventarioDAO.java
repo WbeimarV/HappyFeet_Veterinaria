@@ -1,20 +1,27 @@
 package com.happyfeet.dao;
 
 import com.happyfeet.modelo.Inventario;
-import com.happyfeet.happyfeet_veterinaria.Conexion;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class InventarioDAO {
 
+    private final Connection conexion;
+    private static final Logger logger = Logger.getLogger(InventarioDAO.class.getName());
+
+    public InventarioDAO(Connection conexion) {
+        this.conexion = conexion;
+    }
+
+    // INSERTAR
     public String insertar(Inventario inv) {
         String sql = "INSERT INTO inventario " +
                 "(nombre_producto, producto_tipo_id, descripcion, fabricante, lote, cantidad_stock, stock_minimo, fecha_vencimiento, precio_venta) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = Conexion.getConexion();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, inv.getNombreProducto());
             ps.setInt(2, inv.getProductoTipoId());
@@ -27,6 +34,7 @@ public class InventarioDAO {
             ps.setDouble(9, inv.getPrecioVenta());
 
             ps.executeUpdate();
+
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) inv.setId(rs.getInt(1));
             }
@@ -35,15 +43,16 @@ public class InventarioDAO {
         } catch (SQLIntegrityConstraintViolationException e) {
             return "Error de integridad: verifica que el producto_tipo exista o que no haya duplicados.";
         } catch (SQLException e) {
+            logger.warning("Error al insertar inventario: " + e.getMessage());
             return "Error al insertar inventario: " + e.getMessage();
         }
     }
 
+    // LISTAR TODOS
     public List<Inventario> listarTodos() {
         List<Inventario> lista = new ArrayList<>();
         String sql = "SELECT * FROM inventario";
-        try (Connection conn = Conexion.getConexion();
-             PreparedStatement ps = conn.prepareStatement(sql);
+        try (PreparedStatement ps = conexion.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Inventario i = new Inventario();
@@ -60,15 +69,15 @@ public class InventarioDAO {
                 lista.add(i);
             }
         } catch (SQLException e) {
-            System.err.println("Error al listar inventario: " + e.getMessage());
+            logger.warning("Error al listar inventario: " + e.getMessage());
         }
         return lista;
     }
 
+    // BUSCAR POR ID
     public Inventario buscarPorId(int id) {
         String sql = "SELECT * FROM inventario WHERE id = ?";
-        try (Connection conn = Conexion.getConexion();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -87,16 +96,16 @@ public class InventarioDAO {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error al buscar inventario: " + e.getMessage());
+            logger.warning("Error al buscar inventario: " + e.getMessage());
         }
         return null;
     }
 
+    // ACTUALIZAR
     public String actualizar(Inventario inv) {
         String sql = "UPDATE inventario SET nombre_producto=?, producto_tipo_id=?, descripcion=?, " +
                 "fabricante=?, lote=?, cantidad_stock=?, stock_minimo=?, fecha_vencimiento=?, precio_venta=? WHERE id=?";
-        try (Connection conn = Conexion.getConexion();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
 
             ps.setString(1, inv.getNombreProducto());
             ps.setInt(2, inv.getProductoTipoId());
@@ -110,25 +119,32 @@ public class InventarioDAO {
             ps.setInt(10, inv.getId());
 
             int rows = ps.executeUpdate();
-            return rows > 0 ? "Inventario actualizado correctamente." : "No se encontró el inventario con ID " + inv.getId();
+            return rows > 0
+                    ? "Inventario actualizado correctamente."
+                    : "No se encontró inventario con ID " + inv.getId();
 
         } catch (SQLIntegrityConstraintViolationException e) {
             return "Error de integridad al actualizar (verifique producto_tipo).";
         } catch (SQLException e) {
+            logger.warning("Error al actualizar inventario: " + e.getMessage());
             return "Error al actualizar inventario: " + e.getMessage();
         }
     }
 
+    // ELIMINAR
     public String eliminar(int id) {
         String sql = "DELETE FROM inventario WHERE id=?";
-        try (Connection conn = Conexion.getConexion();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
             ps.setInt(1, id);
             int rows = ps.executeUpdate();
-            return rows > 0 ? "Inventario eliminado correctamente." : "No se encontró el inventario con ID " + id;
+            return rows > 0
+                    ? "Inventario eliminado correctamente."
+                    : "No se encontró inventario con ID " + id;
+
         } catch (SQLIntegrityConstraintViolationException e) {
             return "No se puede eliminar: el registro está referenciado en otra tabla (ej. item_factura).";
         } catch (SQLException e) {
+            logger.warning("Error al eliminar inventario: " + e.getMessage());
             return "Error al eliminar inventario: " + e.getMessage();
         }
     }
