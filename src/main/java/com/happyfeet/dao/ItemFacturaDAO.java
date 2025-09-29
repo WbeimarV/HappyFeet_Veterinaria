@@ -102,4 +102,33 @@ public class ItemFacturaDAO {
         }
         return null;
     }
+
+    // LISTAR POR FACTURA
+public List<ItemFactura> listarPorFactura(int facturaId) {
+    List<ItemFactura> lista = new ArrayList<>();
+    String sql = "SELECT * FROM item_factura WHERE factura_id = ?";
+    try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+        ps.setInt(1, facturaId);
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ItemFactura i = new ItemFactura();
+                i.setId(rs.getInt("id"));
+                i.setFacturaId(rs.getInt("factura_id"));
+                int pid = rs.getInt("producto_id");
+                i.setProductoId(rs.wasNull() ? null : pid);
+                i.setServicioDescripcion(rs.getString("servicio_descripcion"));
+                i.setCantidad(rs.getInt("cantidad"));
+                i.setPrecioUnitario(rs.getDouble("precio_unitario"));
+                i.setSubtotal(rs.getDouble("subtotal"));
+                Timestamp ts = rs.getTimestamp("created_at");
+                if (ts != null) i.setCreatedAt(ts.toLocalDateTime());
+                lista.add(i);
+            }
+        }
+    } catch (SQLException e) {
+        logger.warning("Error al listar items de factura " + facturaId + ": " + e.getMessage());
+    }
+    return lista;
+}
+
 }

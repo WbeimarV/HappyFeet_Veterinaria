@@ -17,10 +17,16 @@ public class FacturaDAO {
 
     // INSERTAR
     public String insertar(Factura f) {
-        String sql = "INSERT INTO factura (dueno_id, total) VALUES (?, ?)";
+        String sql = "INSERT INTO factura (dueno_id, fecha_emision, total) VALUES (?, ?, ?)";
         try (PreparedStatement ps = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, f.getDuenoId());
-            ps.setDouble(2, f.getTotal());
+            // Insertar la fecha actual si no viene definida
+            Timestamp fecha = (f.getFechaEmision() != null)
+                    ? Timestamp.valueOf(f.getFechaEmision())
+                    : Timestamp.valueOf(java.time.LocalDateTime.now());
+            ps.setTimestamp(2, fecha);
+            ps.setDouble(3, f.getTotal());
+
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -43,16 +49,18 @@ public class FacturaDAO {
         List<Factura> lista = new ArrayList<>();
         String sql = "SELECT * FROM factura";
         try (PreparedStatement ps = conexion.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Factura f = new Factura();
                 f.setId(rs.getInt("id"));
                 f.setDuenoId(rs.getInt("dueno_id"));
                 Timestamp fe = rs.getTimestamp("fecha_emision");
-                if (fe != null) f.setFechaEmision(fe.toLocalDateTime());
+                if (fe != null)
+                    f.setFechaEmision(fe.toLocalDateTime());
                 f.setTotal(rs.getDouble("total"));
                 Timestamp ts = rs.getTimestamp("created_at");
-                if (ts != null) f.setCreatedAt(ts.toLocalDateTime());
+                if (ts != null)
+                    f.setCreatedAt(ts.toLocalDateTime());
                 lista.add(f);
             }
         } catch (SQLException e) {
@@ -72,10 +80,12 @@ public class FacturaDAO {
                     f.setId(rs.getInt("id"));
                     f.setDuenoId(rs.getInt("dueno_id"));
                     Timestamp fe = rs.getTimestamp("fecha_emision");
-                    if (fe != null) f.setFechaEmision(fe.toLocalDateTime());
+                    if (fe != null)
+                        f.setFechaEmision(fe.toLocalDateTime());
                     f.setTotal(rs.getDouble("total"));
                     Timestamp ts = rs.getTimestamp("created_at");
-                    if (ts != null) f.setCreatedAt(ts.toLocalDateTime());
+                    if (ts != null)
+                        f.setCreatedAt(ts.toLocalDateTime());
                     return f;
                 }
             }
@@ -123,4 +133,16 @@ public class FacturaDAO {
             return "Error al eliminar factura: " + e.getMessage();
         }
     }
+
+    public void actualizarTotal(int id, double total) {
+        String sql = "UPDATE factura SET total=? WHERE id=?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setDouble(1, total);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.warning("Error al actualizar total de factura: " + e.getMessage());
+        }
+    }
+
 }
