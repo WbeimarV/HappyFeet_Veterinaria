@@ -14,7 +14,7 @@ public class MenuDueno {
         while (!volver) {
             String op = JOptionPane.showInputDialog(
                     null,
-                    "=== MENÚ DUEÑOS ===\n"
+                    " MENÚ DUEÑOS \n"
                   + "1. Registrar\n"
                   + "2. Listar\n"
                   + "3. Eliminar\n"
@@ -35,7 +35,7 @@ public class MenuDueno {
                 JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
             }
         }
-    }
+    }   
 
     private static void registrar(DuenoDAO dao) throws Exception {
         String nombre = JOptionPane.showInputDialog("Nombre completo:");
@@ -50,7 +50,7 @@ public class MenuDueno {
 
     private static void listar(DuenoDAO dao) throws Exception {
         var lista = dao.listar();
-        StringBuilder sb = new StringBuilder("=== LISTA DE DUEÑOS ===\n");
+        StringBuilder sb = new StringBuilder(" LISTA DE DUEÑOS \n");
         for (Dueno d : lista) {
             sb.append("ID: ").append(d.getId())
               .append(" | Nombre: ").append(d.getNombreCompleto())

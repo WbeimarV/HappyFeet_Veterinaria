@@ -19,7 +19,7 @@ public class MascotaDAO {
     // INSERTAR
     public String insertar(Mascota m) {
         String sql = "INSERT INTO mascota(dueno_id, nombre, raza_id, fecha_nacimiento, sexo, url_foto) " +
-                     "VALUES (?,?,?,?,?,?)";
+                "VALUES (?,?,?,?,?,?)";
         try (PreparedStatement ps = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, m.getDuenoId());
@@ -56,7 +56,7 @@ public class MascotaDAO {
         List<Mascota> lista = new ArrayList<>();
         String sql = "SELECT * FROM mascota";
         try (PreparedStatement ps = conexion.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 Mascota m = new Mascota();
@@ -110,4 +110,59 @@ public class MascotaDAO {
         }
         return null;
     }
+
+    // ACTUALIZAR MASCOTA
+    public String actualizar(Mascota m) {
+        String sql = "UPDATE mascota SET dueno_id = ?, nombre = ?, raza_id = ?, " +
+                "fecha_nacimiento = ?, sexo = ?, url_foto = ? WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setInt(1, m.getDuenoId());
+            ps.setString(2, m.getNombre());
+            ps.setInt(3, m.getRazaId());
+
+            if (m.getFechaNacimiento() != null) {
+                ps.setDate(4, Date.valueOf(m.getFechaNacimiento()));
+            } else {
+                ps.setNull(4, Types.DATE);
+            }
+
+            if (m.getSexo() != null) {
+                ps.setString(5, m.getSexo());
+            } else {
+                ps.setNull(5, Types.VARCHAR);
+            }
+
+            if (m.getUrlFoto() != null) {
+                ps.setString(6, m.getUrlFoto());
+            } else {
+                ps.setNull(6, Types.VARCHAR);
+            }
+
+            ps.setInt(7, m.getId());
+
+            int filas = ps.executeUpdate();
+            return (filas > 0) ? "Mascota actualizada correctamente."
+                    : "No se encontró la mascota para actualizar.";
+
+        } catch (SQLException e) {
+            logger.warning("Error al actualizar mascota: " + e.getMessage());
+            return "Error al actualizar mascota: " + e.getMessage();
+        }
+    }
+
+    // ELIMINAR MASCOTA
+    public boolean eliminar(int id) {
+    String sql = "DELETE FROM mascota WHERE id = ?";
+    try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+        ps.setInt(1, id);
+        int filas = ps.executeUpdate();
+        return filas > 0; // true si se eliminó al menos una fila
+    } catch (SQLException e) {
+        logger.warning("Error al eliminar mascota: " + e.getMessage());
+        return false;
+    }
+}
+
+
 }
