@@ -158,7 +158,7 @@ public class MenuMascota {
                     "Nueva fecha de nacimiento (YYYY-MM-DD) (" +
                             (m.getFechaNacimiento() != null ? m.getFechaNacimiento() : "sin dato") + "):");
 
-            // 🔹 Actualizar objeto con los nuevos datos
+            // Actualizar objeto con los nuevos datos
             m.setNombre(nuevoNombre != null && !nuevoNombre.isBlank() ? nuevoNombre : m.getNombre());
 
             if (razaInput != null && !razaInput.isBlank())
